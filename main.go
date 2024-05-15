@@ -10,61 +10,61 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func loadEnv() {
+func loadEnvironmentVariables() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("Error loading .env file, continuing with system env")
+		log.Println("Error loading .env file, continuing with environment variables from the system")
 	}
 }
 
-var upgrader = websocket.Upgrader{
+var websocketUpgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
 }
 
-func DataProcessor(input []byte) ([]byte, error) {
+func processReceivedData(input []byte) ([]byte, error) {
 	return input, nil
 }
 
-func handleConnections(w http.ResponseWriter, r *http.Request) {
-	ws, err := upgrader.Upgrade(w, r, nil)
+func websocketConnectionHandler(w http.ResponseWriter, r *http.Request) {
+	wsConn, err := websocketUpgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("WebSocket Upgrade error: ", err)
 	}
-	defer ws.Close()
+	defer wsConn.Close()
 
 	for {
-		_, message, err := ws.ReadMessage()
+		_, message, err := wsConn.ReadMessage()
 		if err != nil {
-			log.Printf("error: %v", err)
+			log.Printf("WebSocket read error: %v", err)
 			break
 		}
 
-		processedMessage, err := DataProcessor(message)
+		processedMessage, err := processReceivedData(message)
 		if err != nil {
-			log.Printf("error processing data: %s", err)
+			log.Printf("Error processing data: %s", err)
 			continue
 		}
 
-		if err := ws.WriteMessage(websocket.TextMessage, processedMessage); err != nil {
-			log.Printf("error sending message: %s", err)
+		if err := wsConn.WriteMessage(websocket.TextMessage, processedMessage); err != nil {
+			log.Printf("WebSocket write error: %s", err)
 			continue
 		}
 	}
 }
 
 func main() {
-	loadEnv()
-	http.HandleFunc("/", handleConnections)
+	loadEnvironmentVariables()
+	http.HandleFunc("/", websocketConnectionHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	log.Printf("Starting server on :%s\n", port)
+	log.Printf("Starting WebSocket server on :%s", port)
 	err := http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
 	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
+		log.Fatal("ListenAndServe error: ", err)
 	}
 }
