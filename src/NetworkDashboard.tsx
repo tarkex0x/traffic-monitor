@@ -1,14 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import {
-  LineChart,
-  Line,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer
-} from 'recharts';
 import axios from 'axios';
+import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface NetworkData {
   timestamp: string;
@@ -21,27 +13,53 @@ interface FetchError {
 }
 
 const NetworkTrafficVisualizer: React.FC = () => {
-  const [networkData, setNetworkData] = useState<NetworkData[]>([]);
+  const [networkData, setNetworkData] = useState<NetworkWealth[]>([]);
   const [fetchError, setFetchError] = useState<FetchError | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/network-traffic`);
-        setNetworkData(response.data);
-        // Reset error state in case of successful fetch
-        setFetchError(null);
-      } catch (error) {
-        console.error('Error fetching network data:', error);
-        // Capture axios error message or use a fallback
-        const errorMessage = axios.isAxiosError(error) && error.message ? error.message : 'Failed to fetch network data';
-        setFetchError({ message: errorMessage });
-      }
-    };
-    fetchData();
+  // Data fetching function
+  const fetchData = async () => {
+    try {
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/network-traffic`);
+      setNetworkData(response.data);
+      setFetchError(null);
+    } catch (error) {
+      console.error('Error fetching network data:', error);
+      const errorMessage = axios.isAxiosError(error) && error.message ? error.message : 'Failed to fetch network data';
+      setFetchError({ message: errorMessage });
+    }
+  };
 
-    const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
+  useEffect(() => {
+    let interval: NodeJS.Timer;
+    const startFetching = () => {
+      fetchData();
+      interval = setInterval(fetchData, 5000);
+    };
+    
+    const stopFetching = () => {
+      clearInterval(interval);
+    };
+
+    // Start fetching when the component mounts or becomes visible
+    if (document.visibilityState === "visible") {
+      startFetching();
+    } else {
+      stopFetching();
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        startFetching();
+      } else {
+        stopFetching();
+      }
+    });
+
+    return () => {
+      stopFetching();
+      document.removeEventListener("visibilitychange", startFetching);
+      document.removeEventListener("visibilitychange", stopFetching);
+    };
   }, []);
 
   if (fetchError) {
@@ -59,7 +77,7 @@ const NetworkTrafficVisualizer: React.FC = () => {
           <Tooltip />
         </LineChart>
       </ResponsiveContainer>
-
+      
       <ResponsiveContainer>
         <LineChart data={networkData}>
           <Line type="monotone" dataKey="latency" stroke="#82ca9d" />
@@ -73,4 +91,4 @@ const NetworkTrafficVisualizer: React.FC = () => {
   );
 };
 
-export default NetworkTrafficVisualizer;
+export default NetworkTraffic Visualizer;
