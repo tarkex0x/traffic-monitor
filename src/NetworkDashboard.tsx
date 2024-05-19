@@ -13,10 +13,9 @@ interface FetchError {
 }
 
 const NetworkTrafficVisualizer: React.FC = () => {
-  const [networkData, setNetworkData] = useState<NetworkWealth[]>([]);
+  const [networkData, setNetworkData] = useState<NetworkData[]>([]);
   const [fetchError, setFetchError] = useState<FetchError | null>(null);
 
-  // Data fetching function
   const fetchData = async () => {
     try {
       const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/network-traffic`);
@@ -24,7 +23,7 @@ const NetworkTrafficVisualizer: React.FC = () => {
       setFetchError(null);
     } catch (error) {
       console.error('Error fetching network data:', error);
-      const errorMessage = axios.isAxiosError(error) && error.message ? error.message : 'Failed to fetch network data';
+      const errorMessage = axios.isAxiosError(error) ? error.response?.data.message || error.message : 'Failed to fetch network data';
       setFetchError({ message: errorMessage });
     }
   };
@@ -32,7 +31,7 @@ const NetworkTrafficVisualizer: React.FC = () => {
   useEffect(() => {
     let interval: NodeJS.Timer;
     const startFetching = () => {
-      fetchData();
+      fetchData().catch(console.error);
       interval = setInterval(fetchData, 5000);
     };
     
@@ -40,25 +39,21 @@ const NetworkTrafficVisualizer: React.FC = () => {
       clearInterval(interval);
     };
 
-    // Start fetching when the component mounts or becomes visible
-    if (document.visibilityState === "visible") {
-      startFetching();
-    } else {
-      stopFetching();
-    }
+    startFetching();
 
-    document.addEventListener("visibilitychange", () => {
+    const visibilityChangeHandler = () => {
       if (document.visibilityState === "visible") {
         startFetching();
       } else {
         stopFetching();
       }
-    });
+    };
+
+    document.addEventListener("visibilitychange", visibilityChangeHandler);
 
     return () => {
       stopFetching();
-      document.removeEventListener("visibilitychange", startFetching);
-      document.removeEventListener("visibilitychange", stopFetching);
+      document.removeEventListener("visibilitychange", visibilityChangeHandler);
     };
   }, []);
 
@@ -91,4 +86,4 @@ const NetworkTrafficVisualizer: React.FC = () => {
   );
 };
 
-export default NetworkTraffic Visualizer;
+export default NetworkTrafficVisualizer;
