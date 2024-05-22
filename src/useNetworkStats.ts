@@ -13,22 +13,24 @@ export const useNetworkStats = () => {
     const [error, setError] = useState<string | null>(null);
 
     const fetchStats = async () => {
+        setLoading(true);
+        setError(null);
+
         try {
             const response = await Axios.get<NetworkStats>(`${process.env.REACT_APP_BACKEND_URL}/network-stats`);
             setStats(response.data);
             setLoading(false);
-            setError(null);
         } catch (error: any) {
-            setError(error.message || "An unknown error occurred");
+            const errorMessage = error.response?.data?.message || error.message || "An unknown error occurred";
+            setError(errorMessage);
             setLoading(false);
         }
     };
 
     useEffect(() => {
         fetchStats();
-        
         const interval = setInterval(fetchStats, 5000);
-        
+
         return () => clearInterval(interval);
     }, []);
 
