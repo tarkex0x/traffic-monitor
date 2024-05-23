@@ -13,16 +13,18 @@ export const useNetworkStats = () => {
     const [error, setError] = useState<string | null>(null);
 
     const fetchStats = async () => {
-        setLoading(true);
-        setError(null);
-
         try {
-            const response = await Axios.get<NetworkStats>(`${process.env.REACT_APP_BACKEND_URL}/network-stats`);
+            setLoading(true); 
+            setError(null); 
+
+            const backendUrl = process.env.REACT_APP_BACKEND_URL ?? "http://localhost:3000";
+            const response = await Axios.get<NetworkStats>(`${backendUrl}/network-stats`);
+            
             setStats(response.data);
-            setLoading(false);
         } catch (error: any) {
             const errorMessage = error.response?.data?.message || error.message || "An unknown error occurred";
             setError(errorMessage);
+        } finally {
             setLoading(false);
         }
     };
