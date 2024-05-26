@@ -17,13 +17,25 @@ func loadEnv() {
 	}
 }
 
+func logTrafficDetails(protocolCounts map[string]int, bandwidthUsage map[string]int64) {
+	logFile, err := os.OpenFile("traffic_log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("Failed to open log file: %v", err)
+	}
+	defer logFile.Close()
+
+	logger := log.New(logFile, "LOG: ", log.Ldate|log.Ltime|log.Lshortfile)
+	logger.Printf("Protocol counts: %v\n", protocolCounts)
+	logger.Printf("Bandwidth usage (bytes): %v\n", bandwidthUsage)
+}
+
 func main() {
 	loadEnv()
 
 	device := os.Getenv("CAPTURE_DEVICE")
 	snapLen := int32(1600)
 	promiscuous := false
-	err := pcap.FindAllDevs()
+	_, err := pcap.FindAllDevs()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -61,6 +73,8 @@ func main() {
 		case <-ticker.C:
 			fmt.Println("Protocol counts in the last 30 seconds: ", protocolCounts)
 			fmt.Println("Bandwidth usage in the last 30 seconds (bytes): ", bandwidthUsage)
+
+			logTrafficDetails(protocolCounts, bandwidthUsage)
 
 			for k := range protocolCounts {
 				protocolCounts[k] = 0
