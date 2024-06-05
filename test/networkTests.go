@@ -2,41 +2,41 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
-	"net"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 )
 
-func startTestServer() *httptest.Server {
+func startMockServer() *httptest.Server {
 	handler := http.NewServeMux()
 	handler.HandleFunc("/data", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost {
-			body, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				http.Error(w, "Error reading request body", http.StatusInternalServerError)
-				return
-			}
-			response := []byte("Received: " + string(body))
-			w.Write(response)
-		} else {
+		if r.Method != http.MethodPost {
 			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+			return
 		}
+		
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Error reading request body", http.StatusInternalServerError)
+			return
+		}
+		response := []byte("Received: " + string(body))
+		w.Write(response)
 	})
 	server := httptest.NewServer(handler)
 	return server
 }
 
-func analyzeTrafficAndCaptureData(url, data string) (string, error) {
-	resp, err := http.Post(url, "application/text", bytes.NewBufferString(data))
+func sendAndCaptureData(url, trafficData string) (string, error) {
+	resp, err := http.Post(url, "application/text", bytes.NewBufferString(trafficData))
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
 
-	responseData, err := ioutil.ReadAll(resp.Body)
+	responseData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -44,34 +44,33 @@ func analyzeTrafficAndCaptureData(url, data string) (string, error) {
 	return string(responseData), nil
 }
 
-func TestTrafficAnalysisAndDataCapturing(t *testing.T) {
-	server := startTestServer()
-	defer server.Close()
+func TestTrafficDataSendingAndCapturing(t *testing.T) {
+	mockServer := startMockServer()
+	defer mockServer.Close()
 
-	url := server.URL + "/data"
+	mockServerURL := mockServer.URL + "/data"
+	testTrafficData := "Hello, Network!"
 
-	mockData := "Hello, Network!"
-
-	receivedData, err := analyzeTrafficAndCaptureData(url, mockData)
+	responseData, err := sendAndCaptureData(mockServerURL, testTrafficData)
 	if err != nil {
-		t.Errorf("Failed to analyze traffic and capture data: %v", err)
+		t.Errorf("Failed to send and capture data: %v", err)
 	}
 
-	expectedResponse := "Received: " + mockData
-	if receivedData != expectedResponse {
-		t.Errorf("Expected response '%s', got '%s'", expectedResponse, receivedData)
+	expectedResponse := "Received: " + testTrafficData
+	if responseData != expectedResponse {
+		t.Errorf("Expected response '%s', got '%s'", expectedResponse, responseData)
 	}
 }
 
-func setupFromEnv() {
+func initializeFromEnvironmentVars() {
 	os.Setenv("NETWORK_ANALYSIS_ENDPOINT", "http://example.com/data")
 }
 
-func TestEnvBasedConfig(t *testinging.T) {
-	setupFromParam()
+func TestEnvironmentVariableConfiguration(t *testing.T) {
+	initializeFromEnvironmentVars()
 
-	endpoint := os.Getenv("NETWORK_ANALYSIS_ENDPOINT")
-	if endpoint == "" {
+	networkAnalysisEndpoint := os.Getenv("NETWORK_ANALYSIS_ENDPOINT")
+	if networkAnalysisEndpoint == "" {
 		t.Error("Environment variable NETWORK_ANALYSIS_ENDPOINT is not set")
 	}
 }
