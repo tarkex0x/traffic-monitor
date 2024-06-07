@@ -9,38 +9,62 @@ import (
 	"testing"
 )
 
+// startMockServer starts a new mock server with registered handlers.
 func startMockServer() *httptest.Server {
 	handler := http.NewServeMux()
-	handler.HandleFunc("/data", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-			return
-		}
-		
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "Error reading request body", http.StatusInternalServerError)
-			return
-		}
-		response := []byte("Received: " + string(body))
-		w.Write(response)
-	})
+	registerHandlers(handler)
+	
 	server := httptest.NewServer(handler)
 	return server
 }
 
+// registerHandlers registers all handlers for the mock server.
+func registerHandlers(handler *http.ServeMux) {
+	handler.HandleFunc("/data", postDataHandler)
+}
+
+// postDataHandler processes the "/data" endpoint requests.
+func postDataHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+	processRequestBody(w, r)
+}
+
+// processRequestBody reads and responds to the incoming request.
+func processRequestBody(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Error reading request body", http.StatusInternalServerError)
+		return
+	}
+	response := []byte("Received: " + string(body))
+	w.Write(response)
+}
+
+// sendAndCaptureData sends traffic data and captures the response.
 func sendAndCaptureData(url, trafficData string) (string, error) {
-	resp, err := http.Post(url, "application/text", bytes.NewBufferString(trafficData))
+	resp, err := createAndSendRequest(url, trafficData)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
 
+	return readResponse(resp)
+}
+
+// createAndSendRequest creates and sends an HTTP request.
+func createAndSendRequest(url, trafficData string) (*http.Response, error) {
+	return http.Post(url, "application/text", bytes.NewBufferString(trafficData))
+}
+
+// readResponse reads the HTTP response body.
+func readResponse(resp *http.Response) (string, error) {
 	responseData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
-
 	return string(responseData), nil
 }
 
