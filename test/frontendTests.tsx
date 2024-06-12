@@ -6,8 +6,8 @@ import App from './App';
 
 jest.mock('axios');
 
-describe('Network Data Display', () -> {
-  it('fetches and displays data', async () => {
+describe('Network Data Display Tests', () => {
+  it('should fetch and display data correctly', async () => {
     axiosMock.get.mockResolvedValueOnce({data: {title: 'Test Title', body: 'Test Body'}});
     render(<App />);
     expect(await screen.findByText('Test Title')).toBeInTheDocument();
@@ -15,8 +15,8 @@ describe('Network Data Display', () -> {
   });
 });
 
-describe('User Interaction', () -> {
-  it('handles button click', async () => {
+describe('User Interaction Tests', () => {
+  it('should handle button click effectively', async () => {
     render(<App />);
     fireEvent.click(screen.getByText('Click Me'));
     await waitFor(() => {
@@ -25,8 +25,8 @@ describe('User Interaction', () -> {
   });
 });
 
-describe('Environment Variables', () -> {
-  it('uses environment variables', () => {
+describe('Environment Variables Tests', () => {
+  it('should correctly use environment variables', () => {
     process.env.REACT_APP_API_URL = 'https://example.com';
     expect(process.env.REACT_APP_API_URL).toEqual('https://example.com');
   });
