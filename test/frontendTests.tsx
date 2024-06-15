@@ -5,28 +5,28 @@ import axios from 'axios';
 import App from './App';
 
 jest.mock('axios', () => ({
-  get: jest.fn().mockResolvedValue({ data: { title: 'Test Title', body: 'Test Body' } }),
+  get: jest.fn().mockResolvedValue({ data: { title: 'Mocked Test Title', content: 'Mocked Test Body' } }),
 }));
 
-describe('Network Data Display Tests', () => {
-  it('should fetch and display data correctly', async () => {
+describe('NetworkDataDisplayTests', () => {
+  it('fetchesAndDisplaysDataCorrectly', async () => {
     render(<App />);
-    expect(await screen.findByText('Test Title')).toBeInTheDocument();
-    expect(screen.getByText('Test Body')).toBeInTheDocument();
+    expect(await screen.findByText('Mocked Test Title')).toBeInTheDocument();
+    expect(screen.getByText('Mocked Test Body')).toBeInTheDocument();
   });
 });
 
-describe('User Interaction Tests', () => {
-  it('should handle button click effectively', async () => {
+describe('UserInteractionTests', () => {
+  it('handlesButtonClickCorrectly', async () => {
     render(<App />);
     fireEvent.click(screen.getByText('Click Me'));
     await waitFor(() => expect(screen.getByText('Expected Result After Click')).toBeInTheDocument());
   });
 });
 
-describe('Environment Variables Tests', () => {
-  it('should correctly use environment variables', () => {
-    process.env.REACT_APP_APIúdo = 'https://example.com';
-    expect(process.env.REACT_API_URL).toEqual('https://example.com');
+describe('EnvironmentVariableTests', () => {
+  it('usesEnvironmentVariablesCorrectly', () => {
+    process.env.REACT_APP_API_URL = 'https://example.com';
+    expect(process.env.REACT_APP_API_URL).toEqual('https://example.com');
   });
 });
